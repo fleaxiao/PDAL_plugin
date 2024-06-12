@@ -1,2 +1,2 @@
-from .PDAR_plugin import PDAR_plugin
-PDAR_plugin().register()
+from .PDAL_plugin import PDAL_plugin
+PDAL_plugin().register()

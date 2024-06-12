@@ -24,19 +24,46 @@ def get_courtyard_size(module):
     else:
         return None
 
-def get_status(module):
+def get_module_status(module):
     module_ref = module.GetReference()
     pos_x = pcbnew.ToMM(module.GetPosition())[0]
     pos_y = pcbnew.ToMM(module.GetPosition())[1]
     angle_degrees = module.GetOrientationDegrees()
     w, h = get_courtyard_size(module)
-
     return module_ref, pos_x, pos_y, angle_degrees, w, h
 
-def is_component_selected():
+def get_track_status(track):
+    net = track.GetNetname()
+    start_x = pcbnew.ToMM(track.GetStart())[0]
+    start_y = pcbnew.ToMM(track.GetStart())[1]
+    end_x = pcbnew.ToMM(track.GetEnd())[0]
+    end_y = pcbnew.ToMM(track.GetEnd())[1]
+    width = pcbnew.ToMM(track.GetWidth())
+    layer = track.GetLayer()
+    if layer == pcbnew.F_Cu:
+        layer = 'F.Cu'
+    elif layer == pcbnew.B_Cu:
+        layer = 'B.Cu'
+    return net, start_x, start_y, end_x, end_y, width, layer
+
+def get_via_status(via):
+    net = via.GetNetname()
+    pos_x = pcbnew.ToMM(via.GetStart()[0])
+    pos_y = pcbnew.ToMM(via.GetStart()[1])
+    diameter = pcbnew.ToMM(via.GetWidth())
+    return net, pos_x, pos_y, diameter
+
+def is_module_selected():
     pcb = pcbnew.GetBoard()
     for module in pcb.GetFootprints():
         if module.IsSelected():
+            return True
+    return False
+
+def is_track_selected():
+    pcb = pcbnew.GetBoard()
+    for track in pcb.GetTracks():
+        if track.IsSelected():
             return True
     return False
 
@@ -52,7 +79,7 @@ def create_component(board, fp_path, fp_lib, fp, ref, value, x1, y1, x2, y2):
         x = random.uniform(x1 + w/2, x2 - w/2)
         y = random.uniform(y1 + h/2, y2 - h/2)
         for module_existing in board.GetFootprints():
-            _ , pos_existing_x, pos_existing_y, _, w_existing, h_existing = get_status(module_existing)
+            _ , pos_existing_x, pos_existing_y, _, w_existing, h_existing = get_module_status(module_existing)
             if ((pos_existing_x - w_existing/2 <= x - w/2 <= pos_existing_x + w_existing/2 and 
                  pos_existing_y - h_existing/2 <= y - h/2 <= pos_existing_y + h_existing/2) or
                 (pos_existing_x - w_existing/2 <= x + w/2 <= pos_existing_x + w_existing/2 and 
@@ -93,7 +120,7 @@ def place_component(board, module, x1, y1, x2, y2):
         x = random.uniform(x1 + w/2, x2 - w/2)
         y = random.uniform(y1 + h/2, y2 - h/2)
         for module_existing in board.GetFootprints():
-            _ , pos_existing_x, pos_existing_y, _, w_existing, h_existing = get_status(module_existing)
+            _ , pos_existing_x, pos_existing_y, _, w_existing, h_existing = get_module_status(module_existing)
             if ((pos_existing_x - w_existing/2 <= x - w/2 <= pos_existing_x + w_existing/2 and 
                  pos_existing_y - h_existing/2 <= y - h/2 <= pos_existing_y + h_existing/2) or
                 (pos_existing_x - w_existing/2 <= x + w/2 <= pos_existing_x + w_existing/2 and 

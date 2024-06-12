@@ -4,16 +4,17 @@ import os
 import numpy as np
 import pandas as pd
 import time
+from datetime import datetime
 import threading
 import json
 from .function import *
 from .tool import *
 
-class PDAR_plugin(pcbnew.ActionPlugin):
+class PDAL_plugin(pcbnew.ActionPlugin):
     def defaults(self):
-        self.name = "PCB Design Action Recorder"
-        self.category = "Export PCB actions"
-        self.description = "Record the actions when designing PCB"
+        self.name = "PCB Design Action Labeler"
+        self.category = "Import PCB actions"
+        self.description = "Label the actions when designing PCB"
         self.show_toolbar_button = True
         self.icon_file_name = os.path.join(os.path.dirname(__file__), 'icon.png')
 
@@ -22,65 +23,85 @@ class PDAR_plugin(pcbnew.ActionPlugin):
         global RECORD_DESIGN
 
         FLAG_RECORD = True
-        prev_df = pd.DataFrame()
+        prev_module_status = pd.DataFrame()
+        prev_track_status = pd.DataFrame()
+        prev_via_status = pd.DataFrame()
 
         while FLAG_RECORD:
             time.sleep(0.1)
-            new_df = pcb_record()
+            new_module_status, new_track_status, new_via_status = pcb_record()
 
-            if not new_df.equals(prev_df):
-                if not is_component_selected():
-                    data_dict = new_df.to_dict('records')
+            if not new_module_status.equals(prev_module_status) or not new_track_status.equals(prev_track_status) or not new_via_status.equals(prev_via_status):
+                if not is_module_selected() and not is_track_selected():
+                    data_dict = new_module_status.to_dict('records')
 
                     for record in data_dict:
                         module_ref = record.get('Module Reference')
 
-                        if module_ref not in RECORD_DESIGN:
-                            RECORD_DESIGN[module_ref] = {'Position X': [], 'Position Y': [], 'Angle': []}
+                        if module_ref not in RECORD_DESIGN['Module']:
+                            RECORD_DESIGN['Module'][module_ref] = {'Position X': [], 'Position Y': [], 'Angle': []}
 
                         pos_x = record.get('Position X')
                         pos_y = record.get('Position Y')
                         angle = record.get('Angle')
 
-                        RECORD_DESIGN[module_ref]['Position X'].append(pos_x)
-                        RECORD_DESIGN[module_ref]['Position Y'].append(pos_y)
-                        RECORD_DESIGN[module_ref]['Angle'].append(angle)
+                        RECORD_DESIGN['Module'][module_ref]['Position X'].append(pos_x)
+                        RECORD_DESIGN['Module'][module_ref]['Position Y'].append(pos_y)
+                        RECORD_DESIGN['Module'][module_ref]['Angle'].append(angle)
+                    
+                    RECORD_DESIGN['Track']['Net'].append(new_track_status['Net'].tolist())
+                    RECORD_DESIGN['Track']['Start X'].append(new_track_status['Start X'].tolist())
+                    RECORD_DESIGN['Track']['Start Y'].append(new_track_status['Start Y'].tolist())
+                    RECORD_DESIGN['Track']['End X'].append(new_track_status['End X'].tolist())
+                    RECORD_DESIGN['Track']['End Y'].append(new_track_status['End Y'].tolist())
+                    RECORD_DESIGN['Track']['Width'].append(new_track_status['Width'].tolist())
+                    RECORD_DESIGN['Track']['Layer'].append(new_track_status['Layer'].tolist())
 
-                    prev_df = new_df
+                    RECORD_DESIGN['Via']['Net'].append(new_via_status['Net'].tolist())
+                    RECORD_DESIGN['Via']['Position X'].append(new_via_status['Position X'].tolist())
+                    RECORD_DESIGN['Via']['Position Y'].append(new_via_status['Position Y'].tolist())
+                    RECORD_DESIGN['Via']['Diameter'].append(new_via_status['Diameter'].tolist())
+
+                    prev_module_status = new_module_status
+                    prev_track_status = new_track_status
+                    prev_via_status = new_via_status
     
     def initialization(self, event):
-        self.text2.SetLabel('Environment is ready.')
-        
         pcb_init()
-        # random_placement()
+
+        self.text2.SetLabel('Environment is ready.')
 
     def start_record(self, event):
-        self.text2.SetLabel('Recording...')
-
-        random_placement()
-        
         global RECORD_DESIGN
 
-        RECORD_DESIGN = {}
+        random_placement()
+        RECORD_DESIGN = {'Module':{},
+                         'Track':{'Net':[], 'Start X': [], 'Start Y': [], 'End X': [], 'End Y': [], 'Width': [], 'Layer': []},
+                         'Via':{'Net':[], 'Position X': [], 'Position Y': [], 'Diameter': []}}
         thread = threading.Thread(target = self.record_loop).start()
+
+        self.text2.SetLabel('Recording...')
 
 
     def end_record(self, event):
-        self.text2.SetLabel('Reocrd is finished!')
-        
         global FLAG_RECORD
         global RECORD_DESIGN
 
         FLAG_RECORD = False
         record_data = json.dumps(RECORD_DESIGN, indent=4)
-        with open('pcb_record.json', 'w') as file:
+
+        now = datetime.now()
+        time_string = now.strftime("%Y%m%d_%H%M%S")
+        # filename = 'pcb_record_' + time_string + '.json' #? Add the current time to the filename
+        filename = 'pcb_record' + '.json' #? Keep the filename unchanged
+        with open(filename, 'w') as file:
             file.write(record_data)
         
         RECORD_DESIGN = {}
 
+        self.text2.SetLabel('Reocrd is finished!')
+
     def abandon_record(self, event):
-        self.text2.SetLabel('Reocrd is abandoned!')
-        
         global FLAG_RECORD
         global RECORD_DESIGN
 
@@ -92,8 +113,9 @@ class PDAR_plugin(pcbnew.ActionPlugin):
         #         board.Remove(item)
         # for module in board.GetFootprints():
         #     board.RemoveNative(module)
-  
         pcbnew.Refresh()
+
+        self.text2.SetLabel('Reocrd is abandoned!')
         
     def Run(self):
         board = pcbnew.GetBoard()
@@ -123,10 +145,9 @@ class PDAR_plugin(pcbnew.ActionPlugin):
         self.text1.SetFont(wx.Font(6, wx.DECORATIVE, wx.NORMAL, wx.BOLD))
         self.text1.SetForegroundColour(wx.LIGHT_GREY)
 
-        self.text2 = wx.StaticText(self.frame, label = 'Record is ready', pos = (20,125), size = (140,10), style=wx.ALIGN_CENTER)
+        self.text2 = wx.StaticText(self.frame, label = 'Record is ready', pos = (240,125), size = (140,10), style=wx.ALIGN_CENTER)
         self.text2.SetFont(wx.Font(7, wx.DECORATIVE, wx.NORMAL, wx.BOLD))
         self.text2.SetForegroundColour(wx.RED)
-        # self.text2.SetForegroundColour(wx.LIGHT_GREY)
         self.text2.SetWindowStyle(wx.ALIGN_CENTER) 
 
         # Create first button

@@ -26,14 +26,14 @@ def pcb_init():
     for item in list(board.GetDrawings()):
         if isinstance(item, pcbnew.PCB_SHAPE) and item.GetLayer() == pcbnew.Edge_Cuts:
             board.Remove(item)
-    rectangle = pcbnew.PCB_SHAPE(board)
-    rectangle.SetShape(pcbnew.SHAPE_T_RECT)
-    rectangle.SetStartX(originX)
-    rectangle.SetStartY(originY)
-    rectangle.SetEndX(endX)
-    rectangle.SetEndY(endY)
-    rectangle.SetLayer(pcbnew.Edge_Cuts)
-    board.Add(rectangle)
+    rectmodule_angle = pcbnew.PCB_SHAPE(board)
+    rectmodule_angle.SetShape(pcbnew.SHAPE_T_RECT)
+    rectmodule_angle.SetStartX(originX)
+    rectmodule_angle.SetStartY(originY)
+    rectmodule_angle.SetEndX(endX)
+    rectmodule_angle.SetEndY(endY)
+    rectmodule_angle.SetLayer(pcbnew.Edge_Cuts)
+    board.Add(rectmodule_angle)
 
     # Initialize the components
     ## Import the footprints from the schematic
@@ -80,6 +80,9 @@ def random_placement():
     x2 = 100
     y2 = 100
 
+    for track in board.GetTracks():
+        board.Delete(track)
+
     for module in board.GetFootprints():
         place_component(board, module, x1, y1, x2, y2)
 
@@ -89,20 +92,70 @@ def pcb_record():
     board: pcbnew.BOARD = pcbnew.GetBoard()
 
     module_ref = list()
-    pos_x = np.array([]).reshape(-1, 1)
-    pos_y = np.array([]).reshape(-1, 1)
-    angle = np.array([]).reshape(-1, 1)
-    for module in board.GetFootprints():
-        
-        module_ref_i, pos_x_i, pos_y_i, angle_degrees_i, _, _ = get_status(module)
-        
+    module_pos_x = np.array([]).reshape(-1, 1)
+    module_pos_y = np.array([]).reshape(-1, 1)
+    module_angle = np.array([]).reshape(-1, 1)
+    for module in board.GetFootprints():   
+        module_ref_i, module_pos_x_i, module_pos_y_i, module_angle_i, _, _ = get_module_status(module)
         module_ref.append(module_ref_i)
-        pos_x = np.append(pos_x, pos_x_i)
-        pos_y = np.append(pos_y, pos_y_i)
-        angle = np.append(angle, angle_degrees_i)
+        module_pos_x = np.append(module_pos_x, module_pos_x_i)
+        module_pos_y = np.append(module_pos_y, module_pos_y_i)
+        module_angle = np.append(module_angle, module_angle_i)
+    module_status = {'Module Reference': module_ref, 'Position X': module_pos_x, 'Position Y': module_pos_y, 'Angle': module_angle}
+    new_module_status = pd.DataFrame(module_status)
+    new_module_status = new_module_status.sort_values(by = ['Module Reference'])    
 
-    data = {'Module Reference': module_ref, 'Position X': pos_x, 'Position Y': pos_y, 'Angle': angle}
-    new_df = pd.DataFrame(data)
-    new_df = new_df.sort_values(by = ['Module Reference'])
+    track_net = list()
+    track_start_x = np.array([]).reshape(-1, 1)
+    track_start_y = np.array([]).reshape(-1, 1)
+    track_end_x = np.array([]).reshape(-1, 1)
+    track_end_y = np.array([]).reshape(-1, 1)
+    track_width = np.array([]).reshape(-1, 1)
+    track_layer = list()
+    num_tracks = sum(1 for track in board.GetTracks() if isinstance(track, pcbnew.PCB_TRACK) and not isinstance(track, pcbnew.PCB_VIA))
+    if num_tracks == 0:
+        track_net.append('None')
+        track_start_x = np.append(track_start_x, None)
+        track_start_y = np.append(track_start_y, None)
+        track_end_x = np.append(track_end_x, None)
+        track_end_y = np.append(track_end_y, None)
+        track_width = np.append(track_width, None)
+        track_layer.append('None')
+    else:
+        for track in board.GetTracks():
+            if isinstance(track, pcbnew.PCB_TRACK) and not isinstance(track, pcbnew.PCB_VIA):
+                track_net_i, track_start_x_i, track_start_y_i, track_end_x_i, track_end_y_i, track_width_i, track_layer_i = get_track_status(track)
+                track_net.append(track_net_i)
+                track_start_x = np.append(track_start_x, track_start_x_i)
+                track_start_y = np.append(track_start_y, track_start_y_i)
+                track_end_x = np.append(track_end_x, track_end_x_i)
+                track_end_y = np.append(track_end_y, track_end_y_i)
+                track_width = np.append(track_width, track_width_i)
+                track_layer.append(track_layer_i)          
+    track_status = {'Net':track_net, 'Start X': track_start_x, 'Start Y': track_start_y, 'End X': track_end_x, 'End Y': track_end_y, 'Width': track_width, 'Layer': track_layer}
+    new_track_status = pd.DataFrame(track_status)
+    new_track_status = new_track_status.sort_values(by = ['Net']) 
 
-    return new_df
+    via_net = list()
+    via_pos_x = np.array([]).reshape(-1, 1)
+    via_pos_y = np.array([]).reshape(-1, 1)
+    via_diameter = np.array([]).reshape(-1, 1)
+    num_vias = sum(1 for track in board.GetTracks() if isinstance(track, pcbnew.PCB_VIA))
+    if num_vias == 0:
+        via_net.append('None')
+        via_pos_x = np.append(via_pos_x, None)
+        via_pos_y = np.append(via_pos_y, None)
+        via_diameter = np.append(via_diameter, None)
+    else:
+        for via in board.GetTracks():
+            if isinstance(via, pcbnew.PCB_VIA):
+                via_net_i, via_pos_x_i, via_pos_y_i, via_diameter_i = get_via_status(via)
+                via_net.append(via_net_i)
+                via_pos_x = np.append(via_pos_x, via_pos_x_i)
+                via_pos_y = np.append(via_pos_y, via_pos_y_i)
+                via_diameter = np.append(via_diameter, via_diameter_i)
+    via_status = {'Net':via_net, 'Position X': via_pos_x, 'Position Y': via_pos_y, 'Diameter': via_diameter}
+    new_via_status = pd.DataFrame(via_status)
+    new_via_status = new_via_status.sort_values(by = ['Net']) 
+
+    return new_module_status, new_track_status, new_via_status
