@@ -125,7 +125,7 @@ class PDAL_plugin(pcbnew.ActionPlugin):
         self.text1.SetFont(wx.Font(6, wx.DECORATIVE, wx.NORMAL, wx.BOLD))
         self.text1.SetForegroundColour(wx.LIGHT_GREY)
 
-        self.text2 = wx.StaticText(self.frame, label = 'PDAL is ready', pos = (50,155), size = (100,10), style=wx.ALIGN_CENTER)
+        self.text2 = wx.StaticText(self.frame, label = 'PDAL is ready', pos = (40,155), size = (120,10), style=wx.ALIGN_CENTER)
         self.text2.SetFont(wx.Font(7, wx.DECORATIVE, wx.NORMAL, wx.BOLD))
         self.text2.SetForegroundColour(wx.RED)
         self.text2.SetWindowStyle(wx.ALIGN_CENTER)
@@ -137,7 +137,7 @@ class PDAL_plugin(pcbnew.ActionPlugin):
         self.text5 = wx.TextCtrl(self.frame, value="Instructions", pos = (212,110), size = (135,25))
 
         # Create slider
-        self.slider = wx.Slider(self.frame, value=10, minValue=10, maxValue=100, pos=(225,80), size=(107,25), style=wx.SL_HORIZONTAL) #? MaxValue should be the length of the record file
+        self.slider = wx.Slider(self.frame, value=20, minValue=10, maxValue=50, pos=(229,80), size=(100,25), style=wx.SL_HORIZONTAL) #? MaxValue should be the length of the record file
         self.min_value_text = wx.StaticText(self.frame, label=str(self.slider.GetMin()), pos=(215, 90))
         self.min_value_text.SetFont(wx.Font(7, wx.DECORATIVE, wx.NORMAL, wx.BOLD))
         self.max_value_text = wx.StaticText(self.frame, label=str(self.slider.GetMax()), pos=(330, 90))
@@ -147,28 +147,28 @@ class PDAL_plugin(pcbnew.ActionPlugin):
         self.slider_value.SetWindowStyle(wx.ALIGN_CENTER)
 
         # Create button
-        self.button1 = wx.Button(self.frame, label = 'Initialization', pos = (180,15), size=(260, 25))
+        self.button1 = wx.Button(self.frame, label = 'Initialization', pos = (180,15), size=(272, 25))
         self.button1.Bind(wx.EVT_BUTTON, self.initialization)
 
-        self.button2 = wx.Button(self.frame, label = 'Load', pos = (350,50), size=(90, 25))
+        self.button2 = wx.Button(self.frame, label = 'Load', pos = (350,50), size=(102, 25))
         self.button2.Bind(wx.EVT_BUTTON, self.load_action)
 
-        self.button3 = wx.Button(self.frame, label = 'Play', pos = (350,80), size=(45, 25))
+        self.button3 = wx.Button(self.frame, label = 'Play', pos = (350,80), size=(50, 25))
         self.button3.Bind(wx.EVT_BUTTON, self.play_action)
 
-        self.button4 = wx.Button(self.frame, label = 'Replay', pos = (395,80), size=(45, 25))
+        self.button4 = wx.Button(self.frame, label = 'Replay', pos = (402,80), size=(50, 25))
         self.button4.Bind(wx.EVT_BUTTON, self.replay_action)
 
-        self.button5 = wx.Button(self.frame, label = 'Label', pos = (350,110), size=(90, 25))
+        self.button5 = wx.Button(self.frame, label = 'Label', pos = (350,110), size=(102, 25))
         self.button5.Bind(wx.EVT_BUTTON, self.label_action)
 
-        self.button6 = wx.Button(self.frame, label = 'Save label file', pos = (180,140), size=(260, 25))
+        self.button6 = wx.Button(self.frame, label = 'Save label file', pos = (180,140), size=(272, 25))
         self.button6.Bind(wx.EVT_BUTTON, self.save_action)
 
         # Create line
-        self.line1 = wx.StaticLine(self.frame, pos=(185, 45), size=(240,1), style=wx.LI_HORIZONTAL)
+        self.line1 = wx.StaticLine(self.frame, pos=(195, 45), size=(240,1), style=wx.LI_HORIZONTAL)
         self.line2 = wx.StaticLine(self.frame, pos=(40, 172), size=(120,1), style=wx.LI_HORIZONTAL)
-        self.line3 = wx.StaticLine(self.frame, pos=(185, 172), size=(240,1), style=wx.LI_HORIZONTAL)
+        self.line3 = wx.StaticLine(self.frame, pos=(195, 172), size=(240,1), style=wx.LI_HORIZONTAL)
 
         self.frame.Show()
 
