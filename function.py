@@ -58,104 +58,60 @@ def pcb_init():
     time.sleep(0.1)
     pyautogui.press('esc')
 
-    ## Import the footprints from the predefinition
-    # KICAD_VERSION = pcbnew.Version().split(".")[0]
-    # fp_path = os.getenv("KICAD" + KICAD_VERSION + "_FOOTPRINT_DIR", default=None)
-    # create_component(board, fp_path, "Capacitor_THT.pretty", "CP_Axial_L37.0mm_D20.0mm_P43.00mm_Horizontal", "C1", "47uF", x1, y1, x2, y2)
-    # create_component(board, fp_path, "Capacitor_THT.pretty", "CP_Axial_L37.0mm_D16.0mm_P43.00mm_Horizontal", "C2", "47uF", x1, y1, x2, y2)
-    # create_component(board, fp_path, "Diode_THT.pretty", "D_DO-201AE_P15.24mm_Horizontal", "D1", "Diode", x1, y1, x2, y2)
-    # create_component(board, fp_path, "inductor_THT.pretty", "L_Radial_D21.0mm_P15.00mm_Vishay_IHB-2", "L1", "110uH", x1, y1, x2, y2)
-    # create_component(board, fp_path, "Package_TO_SOT_THT.pretty", "TO-247-3_Vertical", "S1", "TO-247-3", x1, y1, x2, y2)
-    # create_component(board, fp_path, "Connector_PinSocket_2.54mm.pretty", "PinSocket_1x05_P2.54mm_Vertical", "P1", "Signal", x1, y1, x2, y2)
-    # create_component(board, fp_path, "Connector_Phoenix_GMSTB.pretty", "PhoenixContact_GMSTBVA_2,5_2-G_1x02_P7.50mm_Vertical", "P2", "Power Input", x1, y1, x2, y2)
-    # create_component(board, fp_path, "Connector_Phoenix_GMSTB.pretty", "PhoenixContact_GMSTBVA_2,5_2-G_1x02_P7.50mm_Vertical", "P3", "Power Output", x1, y1, x2, y2)
-
     pcbnew.Refresh()
 
-def random_placement():
-    board: pcbnew.BOARD = pcbnew.GetBoard()
-
-    x1 = 40
-    y1 = 40
-    x2 = 100
-    y2 = 100
-
-    for track in board.GetTracks():
-        board.Delete(track)
-
-    for module in board.GetFootprints():
-        place_component(board, module, x1, y1, x2, y2)
-
-    pcbnew.Refresh()
-
-def pcb_record():
-    board: pcbnew.BOARD = pcbnew.GetBoard()
-
-    module_ref = list()
-    module_pos_x = np.array([]).reshape(-1, 1)
-    module_pos_y = np.array([]).reshape(-1, 1)
-    module_angle = np.array([]).reshape(-1, 1)
-    for module in board.GetFootprints():   
-        module_ref_i, module_pos_x_i, module_pos_y_i, module_angle_i, _, _ = get_module_status(module)
-        module_ref.append(module_ref_i)
-        module_pos_x = np.append(module_pos_x, module_pos_x_i)
-        module_pos_y = np.append(module_pos_y, module_pos_y_i)
-        module_angle = np.append(module_angle, module_angle_i)
-    module_status = {'Module Reference': module_ref, 'Position X': module_pos_x, 'Position Y': module_pos_y, 'Angle': module_angle}
-    new_module_status = pd.DataFrame(module_status)
-    new_module_status = new_module_status.sort_values(by = ['Module Reference'])    
-
-    track_net = list()
-    track_start_x = np.array([]).reshape(-1, 1)
-    track_start_y = np.array([]).reshape(-1, 1)
-    track_end_x = np.array([]).reshape(-1, 1)
-    track_end_y = np.array([]).reshape(-1, 1)
-    track_width = np.array([]).reshape(-1, 1)
-    track_layer = list()
-    num_tracks = sum(1 for track in board.GetTracks() if isinstance(track, pcbnew.PCB_TRACK) and not isinstance(track, pcbnew.PCB_VIA))
-    if num_tracks == 0:
-        track_net.append('None')
-        track_start_x = np.append(track_start_x, None)
-        track_start_y = np.append(track_start_y, None)
-        track_end_x = np.append(track_end_x, None)
-        track_end_y = np.append(track_end_y, None)
-        track_width = np.append(track_width, None)
-        track_layer.append('None')
+def random_tailor(RECORD_DESIGN, start, step):
+    if isinstance(RECORD_DESIGN, dict):
+        return {k: random_tailor(v, start, step) for k, v in RECORD_DESIGN.items()}
     else:
+        if len(RECORD_DESIGN) < step:
+            return RECORD_DESIGN
+        else:
+            return RECORD_DESIGN[start:start+step]
+
+def record_play(SLICE, step):
+    board = pcbnew.GetBoard()
+    for i in range(step):
         for track in board.GetTracks():
-            if isinstance(track, pcbnew.PCB_TRACK) and not isinstance(track, pcbnew.PCB_VIA):
-                track_net_i, track_start_x_i, track_start_y_i, track_end_x_i, track_end_y_i, track_width_i, track_layer_i = get_track_status(track)
-                track_net.append(track_net_i)
-                track_start_x = np.append(track_start_x, track_start_x_i)
-                track_start_y = np.append(track_start_y, track_start_y_i)
-                track_end_x = np.append(track_end_x, track_end_x_i)
-                track_end_y = np.append(track_end_y, track_end_y_i)
-                track_width = np.append(track_width, track_width_i)
-                track_layer.append(track_layer_i)          
-    track_status = {'Net':track_net, 'Start X': track_start_x, 'Start Y': track_start_y, 'End X': track_end_x, 'End Y': track_end_y, 'Width': track_width, 'Layer': track_layer}
-    new_track_status = pd.DataFrame(track_status)
-    new_track_status = new_track_status.sort_values(by = ['Net']) 
+            board.Delete(track)
+        for key, value in SLICE.items():
+            if key == 'Module':
+                for key, value in value.items():
+                    module_ref = key
+                    module_x = value['Position X'][i]
+                    module_y = value['Position Y'][i]
+                    module_angle = value['Angle'][i]
+                    place_module(board, module_ref, module_x, module_y, module_angle)
+            elif key == 'Track':
+                track_net = value['Net'][i]
+                track_start_x = value['Start X'][i]
+                track_start_y = value['Start Y'][i]
+                track_end_x = value['End X'][i]
+                track_end_y = value['End Y'][i]
+                track_width = value['Width'][i]
+                track_layer = value['Layer'][i]
+                if track_net == ['None']:
+                    break
+                else:
+                    for j in range(len(track_net)):
+                        place_track(board, track_net[j], track_start_x[j], track_start_y[j], track_end_x[j], track_end_y[j], track_width[j], track_layer[j])
+            elif key == 'Via':
+                via_net = value['Net'][i]
+                via_pos_x = value['Position X'][i]
+                via_pos_y = value['Position Y'][i]
+                via_diameter = value['Diameter'][i]
+                if via_net == ['None']:
+                    break
+                else:
+                    for j in range(len(via_net)):
+                        place_via(board, via_net[j], via_pos_x[j], via_pos_y[j], via_diameter[j])
+        pcbnew.Refresh()
+        time.sleep(0.5)
 
-    via_net = list()
-    via_pos_x = np.array([]).reshape(-1, 1)
-    via_pos_y = np.array([]).reshape(-1, 1)
-    via_diameter = np.array([]).reshape(-1, 1)
-    num_vias = sum(1 for track in board.GetTracks() if isinstance(track, pcbnew.PCB_VIA))
-    if num_vias == 0:
-        via_net.append('None')
-        via_pos_x = np.append(via_pos_x, None)
-        via_pos_y = np.append(via_pos_y, None)
-        via_diameter = np.append(via_diameter, None)
-    else:
-        for via in board.GetTracks():
-            if isinstance(via, pcbnew.PCB_VIA):
-                via_net_i, via_pos_x_i, via_pos_y_i, via_diameter_i = get_via_status(via)
-                via_net.append(via_net_i)
-                via_pos_x = np.append(via_pos_x, via_pos_x_i)
-                via_pos_y = np.append(via_pos_y, via_pos_y_i)
-                via_diameter = np.append(via_diameter, via_diameter_i)
-    via_status = {'Net':via_net, 'Position X': via_pos_x, 'Position Y': via_pos_y, 'Diameter': via_diameter}
-    new_via_status = pd.DataFrame(via_status)
-    new_via_status = new_via_status.sort_values(by = ['Net']) 
-
-    return new_module_status, new_track_status, new_via_status
+def label_slice(LABEL_DESIGN, SLICE, ID, INSTRUCTION):
+    if LABEL_DESIGN == {}:
+        LABEL_DESIGN = {'ID': [], 'Instruction': [], 'Slice': []}
+    LABEL_DESIGN['ID'].append(ID)
+    LABEL_DESIGN['Instruction'].append(INSTRUCTION)
+    LABEL_DESIGN['Slice'].append(SLICE)
+    return LABEL_DESIGN

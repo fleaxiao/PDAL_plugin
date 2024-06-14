@@ -144,6 +144,30 @@ def place_component(board, module, x1, y1, x2, y2):
             break
 
     if FLAG == True:
-        wx.MessageBox(f'No space available for component', 'Error')
+        wx.MessageBox(f'No space available for components', 'Error')
     else:
         module.SetPosition(pcbnew.VECTOR2I(pcbnew.wxPointMM(x, y)))
+
+def place_module(board, module_ref, module_x, module_y, module_angle):
+    module = board.FindFootprintByReference(module_ref)
+    module.SetPosition(pcbnew.VECTOR2I(pcbnew.wxPointMM(module_x, module_y)))
+    module.SetOrientationDegrees(module_angle)
+
+def place_track(board, net, start_x, start_y, end_x, end_y, width, layer):
+    track = pcbnew.PCB_TRACK(board)
+    track.SetNet(board.FindNet(net))
+    track.SetStart(pcbnew.VECTOR2I(pcbnew.wxPointMM(start_x, start_y)))
+    track.SetEnd(pcbnew.VECTOR2I(pcbnew.wxPointMM(end_x, end_y)))
+    track.SetWidth(pcbnew.FromMM(width))
+    if layer == 'F.Cu':
+        track.SetLayer(pcbnew.F_Cu)
+    elif layer == 'B.Cu':
+        track.SetLayer(pcbnew.B_Cu)
+    board.Add(track)
+
+def place_via(board, net, pos_x, pos_y, diameter):
+    via = pcbnew.PCB_VIA(board)
+    via.SetNet(board.FindNet(net))
+    via.SetPosition(pcbnew.VECTOR2I(pcbnew.wxPointMM(pos_x, pos_y)))
+    via.SetWidth(pcbnew.FromMM(diameter))
+    board.Add(via)

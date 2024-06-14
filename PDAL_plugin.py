@@ -3,6 +3,7 @@ import wx
 import os
 import numpy as np
 import pandas as pd
+import random
 import time
 from datetime import datetime
 import threading
@@ -28,7 +29,6 @@ class PDAL_plugin(pcbnew.ActionPlugin):
     
     def load_action(self, event):
         global RECORD_DESIGN
-        RECORD_DESIGN = {}
 
         board = pcbnew.GetBoard()
         work_dir, in_pcb_file = os.path.split(board.GetFileName())
@@ -43,14 +43,61 @@ class PDAL_plugin(pcbnew.ActionPlugin):
         dlg.Destroy() 
 
     def play_action(self, event):
+        global RECORD_DESIGN, SLICE
 
-        self.text2.SetLabel('Reocrd is finished!')
+        if RECORD_DESIGN == {}:
+            self.text2.SetLabel('Please load record file.')
+            return
+        self.step = int(self.slider.GetValue())
+        if self.step > len(RECORD_DESIGN['Track']['Net']):
+            self.step = len(RECORD_DESIGN['Track']['Net'])
+        start = random.randrange(0, len(RECORD_DESIGN['Track']['Net']) - self.step + 1)
+        SLICE = random_tailor(RECORD_DESIGN, start, self.step)
+        self.text2.SetLabel('Playing...')
+        record_play(SLICE, self.step)
+
+        self.text2.SetLabel('Play is end.')
+
+    def replay_action(self, event):
+        global RECORD_DESIGN, SLICE
+
+        if RECORD_DESIGN == {}:
+            self.text2.SetLabel('Please load record file.')
+            return
+        self.text2.SetLabel('Replaying...')
+        record_play(SLICE, self.step)
+
+        self.text2.SetLabel('Replay is end.')
 
     def label_action(self, event):
+        global SLICE, LABEL_DESIGN
 
-        self.text2.SetLabel('Reocrd is abandoned!')
+        ID = int(self.text4.GetValue())
+        INSTRUCTION = str(self.text5.GetValue())
+        LABEL_DESIGN = label_slice(LABEL_DESIGN, SLICE, ID, INSTRUCTION)
+
+        self.text2.SetLabel('Slice is labeled.')
+    
+    def save_action(self, event):
+        global LABEL_DESIGN
+
+        label_data = json.dumps(LABEL_DESIGN, indent=4)
+        now = datetime.now()
+        time_string = now.strftime("%Y%m%d_%H%M%S")
+        # filename = 'PDA_' + time_string + '_label' + '.json' #? Add the current time to the filename
+        filename = 'PDA_label' + '.json' #? Keep the filename unchanged
+        with open(filename, 'w') as file:
+            file.write(label_data)
+
+        LABEL_DESIGN = {}
+
+        self.text2.SetLabel('Label file is saved.')
         
     def Run(self):
+        global RECORD_DESIGN, LABEL_DESIGN
+        RECORD_DESIGN = {}
+        LABEL_DESIGN = {}
+
         board = pcbnew.GetBoard()
         work_dir, in_pcb_file = os.path.split(board.GetFileName())
         os.chdir(work_dir) # Change the working directory to the directory of the PCB file
@@ -85,17 +132,17 @@ class PDAL_plugin(pcbnew.ActionPlugin):
 
         self.text3 = wx.TextCtrl(self.frame, pos = (180,50), size = (165,25), style = wx.TE_READONLY)
 
-        self.text4 = wx.TextCtrl(self.frame, value="ID", pos = (180,110), size = (20,25))
+        self.text4 = wx.TextCtrl(self.frame, value="ID", pos = (180,110), size = (30,25), style = wx.TE_CENTRE)
 
-        self.text5 = wx.TextCtrl(self.frame, value="Instructions", pos = (205,110), size = (135,25))
+        self.text5 = wx.TextCtrl(self.frame, value="Instructions", pos = (212,110), size = (135,25))
 
         # Create slider
-        self.slider = wx.Slider(self.frame, value=10, minValue=10, maxValue=50, pos=(220,80), size=(110,25), style=wx.SL_HORIZONTAL)
-        self.min_value_text = wx.StaticText(self.frame, label="10", pos=(210, 90))
+        self.slider = wx.Slider(self.frame, value=10, minValue=10, maxValue=100, pos=(225,80), size=(107,25), style=wx.SL_HORIZONTAL) #? MaxValue should be the length of the record file
+        self.min_value_text = wx.StaticText(self.frame, label=str(self.slider.GetMin()), pos=(215, 90))
         self.min_value_text.SetFont(wx.Font(7, wx.DECORATIVE, wx.NORMAL, wx.BOLD))
-        self.max_value_text = wx.StaticText(self.frame, label="50", pos=(330, 90))
+        self.max_value_text = wx.StaticText(self.frame, label=str(self.slider.GetMax()), pos=(330, 90))
         self.max_value_text.SetFont(wx.Font(7, wx.DECORATIVE, wx.NORMAL, wx.BOLD))
-        self.slider_value = wx.TextCtrl(self.frame, value = str(self.slider.GetValue()), pos=(180,80), size=(20,25), style=wx.TE_READONLY)
+        self.slider_value = wx.TextCtrl(self.frame, value = str(self.slider.GetValue()), pos=(180,80), size=(30,25), style=wx.TE_READONLY)
         self.slider.Bind(wx.EVT_SLIDER, self.on_slider_change)
         self.slider_value.SetWindowStyle(wx.ALIGN_CENTER)
 
@@ -110,13 +157,13 @@ class PDAL_plugin(pcbnew.ActionPlugin):
         self.button3.Bind(wx.EVT_BUTTON, self.play_action)
 
         self.button4 = wx.Button(self.frame, label = 'Replay', pos = (395,80), size=(45, 25))
-        self.button4.Bind(wx.EVT_BUTTON, self.play_action)
+        self.button4.Bind(wx.EVT_BUTTON, self.replay_action)
 
         self.button5 = wx.Button(self.frame, label = 'Label', pos = (350,110), size=(90, 25))
         self.button5.Bind(wx.EVT_BUTTON, self.label_action)
 
-        self.button6 = wx.Button(self.frame, label = 'Output label file', pos = (180,140), size=(260, 25))
-        self.button6.Bind(wx.EVT_BUTTON, self.initialization)
+        self.button6 = wx.Button(self.frame, label = 'Save label file', pos = (180,140), size=(260, 25))
+        self.button6.Bind(wx.EVT_BUTTON, self.save_action)
 
         # Create line
         self.line1 = wx.StaticLine(self.frame, pos=(185, 45), size=(240,1), style=wx.LI_HORIZONTAL)
