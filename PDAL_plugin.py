@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 import random
 import time
-from datetime import datetime
 import threading
 import json
 from .function import *
@@ -34,12 +33,12 @@ class PDAL_plugin(pcbnew.ActionPlugin):
         work_dir, in_pcb_file = os.path.split(board.GetFileName())
         dlg = wx.FileDialog(self.frame, "Choose a record file", work_dir, '', "JSON files (*.json)|*.json", wx.FD_OPEN)
         if dlg.ShowModal() == wx.ID_OK: 
-            filepath = dlg.GetPath() 
-            with open(filepath, 'r') as file:
+            self.filepath = dlg.GetPath() 
+            with open(self.filepath, 'r') as file:
                 data = json.load(file)
             RECORD_DESIGN = data
             self.text2.SetLabel('File is loaded.')
-            self.text3.SetValue(os.path.basename(filepath))
+            self.text3.SetValue(os.path.basename(self.filepath))
         dlg.Destroy() 
 
     def play_action(self, event):
@@ -82,10 +81,8 @@ class PDAL_plugin(pcbnew.ActionPlugin):
         global LABEL_DESIGN
 
         label_data = json.dumps(LABEL_DESIGN, indent=4)
-        now = datetime.now()
-        time_string = now.strftime("%Y%m%d_%H%M%S")
-        # filename = 'PDA_' + time_string + '_label' + '.json' #? Add the current time to the filename
-        filename = 'PDA_label' + '.json' #? Keep the filename unchanged
+        exist_filenname = os.path.basename(self.filepath)
+        filename = exist_filenname.replace("record", "label")
         with open(filename, 'w') as file:
             file.write(label_data)
 
