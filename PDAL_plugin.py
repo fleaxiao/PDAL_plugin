@@ -75,6 +75,9 @@ class PDAL_plugin(pcbnew.ActionPlugin):
         INSTRUCTION = str(self.text5.GetValue())
         LABEL_DESIGN = label_slice(LABEL_DESIGN, SLICE, ID, INSTRUCTION)
 
+        number_label = int(self.text6.GetValue())
+        number_label += 1
+        self.text6.SetValue(str(number_label))
         self.text2.SetLabel('Slice is labeled.')
     
     def save_action(self, event):
@@ -133,6 +136,9 @@ class PDAL_plugin(pcbnew.ActionPlugin):
 
         self.text5 = wx.TextCtrl(self.frame, value="Instructions", pos = (212,110), size = (135,25))
 
+        self.text6 = wx.TextCtrl(self.frame, value="0", pos = (180,140), size = (30,25), style = wx.TE_READONLY)
+        self.text6.SetWindowStyle(wx.ALIGN_CENTER)
+
         # Create slider
         self.slider = wx.Slider(self.frame, value=20, minValue=10, maxValue=50, pos=(229,80), size=(100,25), style=wx.SL_HORIZONTAL) #? MaxValue should be the length of the record file
         self.min_value_text = wx.StaticText(self.frame, label=str(self.slider.GetMin()), pos=(215, 90))
@@ -159,7 +165,7 @@ class PDAL_plugin(pcbnew.ActionPlugin):
         self.button5 = wx.Button(self.frame, label = 'Label', pos = (350,110), size=(102, 25))
         self.button5.Bind(wx.EVT_BUTTON, self.label_action)
 
-        self.button6 = wx.Button(self.frame, label = 'Save label file', pos = (180,140), size=(272, 25))
+        self.button6 = wx.Button(self.frame, label = 'Save label file', pos = (212,140), size=(240, 25))
         self.button6.Bind(wx.EVT_BUTTON, self.save_action)
 
         # Create line
