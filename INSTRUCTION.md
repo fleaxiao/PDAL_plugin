@@ -1,4 +1,4 @@
-# Recoomend Instruction for PDAL
+# Recommended Instruction for PDAL
 
 Group | ID | Instrcution
 :----:|:--:|:----------:
