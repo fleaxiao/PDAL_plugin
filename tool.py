@@ -171,3 +171,55 @@ def place_via(board, net, pos_x, pos_y, diameter):
     via.SetPosition(pcbnew.VECTOR2I(pcbnew.wxPointMM(pos_x, pos_y)))
     via.SetWidth(pcbnew.FromMM(diameter))
     board.Add(via)
+
+def highlight_track(board, start_pos, end_pos, layer):
+    if layer == 'F.Cu':
+        track_layer = pcbnew.F_Cu
+    elif layer == 'B.Cu':
+        track_layer = pcbnew.B_Cu
+    for track in board.GetTracks():
+        if (track.GetStart() == start_pos and 
+            track.GetEnd() == end_pos and 
+            track.GetLayer() == track_layer):
+            track.SetSelected()
+    pcbnew.Refresh()
+
+def find_via(trake_o, via_o):
+    for i in range(len(trake_o[0])):
+        for j in range(len(via_o[0])):
+            if via_o[0,j] == None:
+                break
+            if (trake_o[:2,i].astype(float) == via_o[:2,j]).all():
+                trake_o[2,i] = 'Via'
+                trake_o[3,i] = via_o[2,j]
+    return trake_o
+
+def find_connection(wire, number_track, trake_start_o, trake_end_o, lebal):
+    max_lebal = lebal
+    for i in range(number_track):
+        if i in lebal:
+            continue
+        else:
+            if (wire[:3,-1] == trake_start_o[:3,i]).all():
+                wire = np.hstack((wire, trake_end_o[:,i].reshape(-1,1)))
+                wire, lebal = find_connection(wire, number_track, trake_start_o, trake_end_o, lebal + [i])
+                if len(lebal) > len(max_lebal):
+                    max_lebal = lebal
+            elif (wire[:3,0] == trake_end_o[:3,i]).all():
+                wire = np.hstack((trake_start_o[:,i].reshape(-1,1), wire))
+                wire, lebal = find_connection(wire, number_track, trake_start_o, trake_end_o, lebal + [i])
+                if len(lebal) > len(max_lebal):
+                    max_lebal = lebal
+            elif (wire[:3,-1] == trake_end_o[:3,i]).all():
+                wire = np.hstack((wire, trake_start_o[:,i].reshape(-1,1)))
+                wire, lebal = find_connection(wire, number_track, trake_start_o, trake_end_o, lebal + [i])
+                if len(lebal) > len(max_lebal):
+                    max_lebal = lebal
+            elif (wire[:3,0] == trake_start_o[:3,i]).all():
+                wire = np.hstack((trake_end_o[:,i].reshape(-1,1), wire))
+                wire, lebal = find_connection(wire, number_track, trake_start_o, trake_end_o, lebal + [i])
+                if len(lebal) > len(max_lebal):
+                    max_lebal = lebal
+            else:
+                continue
+    return wire, max_lebal

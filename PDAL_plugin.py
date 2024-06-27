@@ -41,6 +41,10 @@ class PDAL_plugin(pcbnew.ActionPlugin):
             self.text3.SetValue(os.path.basename(self.filepath))
         dlg.Destroy() 
 
+    def on_check_change(self, event):
+        if self.new_check.IsChecked():
+            print("Checkbox is checked.")
+
     def play_action(self, event):
         global RECORD_DESIGN, SLICE
 
@@ -48,14 +52,36 @@ class PDAL_plugin(pcbnew.ActionPlugin):
             self.text2.SetLabel('Please load record file.')
             return
         self.step = int(self.slider.GetValue())
-        if self.step > len(RECORD_DESIGN['Track']['Net']):
-            self.step = len(RECORD_DESIGN['Track']['Net'])
-        start = random.randrange(0, len(RECORD_DESIGN['Track']['Net']) - self.step + 1)
-        SLICE = random_tailor(RECORD_DESIGN, start, self.step)
+        if self.step >= len(RECORD_DESIGN['Record']['Track']['Net']):
+            self.step = len(RECORD_DESIGN['Record']['Track']['Net'])
+        if self.checkbox1.IsChecked():
+            self.start = random.randrange(0, 10)
+        else:
+            self.start = random.randrange(0, len(RECORD_DESIGN['Record']['Track']['Net']) - self.step + 1)
+        SLICE = {'Record':{}, 'Footprint':{}}
+        SLICE['Record'] = random_tailor(RECORD_DESIGN['Record'], self.start, self.step)
+        SLICE['Footprint'] = RECORD_DESIGN['Footprint']
+
+        if self.checkbox2.IsChecked():
+            self.speed = 1
+        else:
+            self.speed = 0.5
         self.text2.SetLabel('Playing...')
-        record_play(SLICE, self.step)
+        record_play(SLICE['Record'], self.step, self.speed)
 
         self.text2.SetLabel('Play is end.')
+
+    def next_action(self, event):
+        global RECORD_DESIGN, SLICE
+
+        if self.step >= len(RECORD_DESIGN['Record']['Track']['Net']) - self.start:
+            self.text2.SetLabel('No more steps!')
+        else:
+            self.step = self.step + 1
+            SLICE['Record'] = random_tailor(RECORD_DESIGN['Record'], self.start, self.step)
+            step_play(SLICE['Record'])
+
+            self.text2.SetLabel('Next step is shown.')
 
     def replay_action(self, event):
         global RECORD_DESIGN, SLICE
@@ -64,7 +90,12 @@ class PDAL_plugin(pcbnew.ActionPlugin):
             self.text2.SetLabel('Please load record file.')
             return
         self.text2.SetLabel('Replaying...')
-        record_play(SLICE, self.step)
+
+        if self.checkbox2.IsChecked():
+            self.speed = 1
+        else:
+            self.speed = 0.5
+        record_play(SLICE['Record'], self.step, self.speed)
 
         self.text2.SetLabel('Replay is end.')
 
@@ -72,12 +103,12 @@ class PDAL_plugin(pcbnew.ActionPlugin):
         global SLICE, LABEL_DESIGN
 
         ID = int(self.text4.GetValue())
-        INSTRUCTION = str(self.text5.GetValue())
-        LABEL_DESIGN = label_slice(LABEL_DESIGN, SLICE, ID, INSTRUCTION)
+        INSTRUCTION = int(self.text5.GetValue())
+        LABEL_DESIGN = label_slice(LABEL_DESIGN, SLICE, self.step, ID, INSTRUCTION)
 
-        number_label = int(self.text6.GetValue())
-        number_label += 1
-        self.text6.SetValue(str(number_label))
+        self.number_label = int(self.text6.GetValue())
+        self.number_label += 1
+        self.text6.SetValue(str(self.number_label))
         self.text2.SetLabel('Slice is labeled.')
     
     def save_action(self, event):
@@ -90,7 +121,8 @@ class PDAL_plugin(pcbnew.ActionPlugin):
             file.write(label_data)
 
         LABEL_DESIGN = {}
-
+        self.number_label = 0
+        self.text6.SetValue(str(self.number_label))
         self.text2.SetLabel('Label file is saved.')
         
     def Run(self):
@@ -104,7 +136,7 @@ class PDAL_plugin(pcbnew.ActionPlugin):
 
         self.frame = wx.Frame(None, -1, style=wx.STAY_ON_TOP)
         self.frame.SetTitle("Design PCB Action Labeler")
-        self.frame.SetSize(0,0,500,200)
+        self.frame.SetSize(0,0,500,230)
         self.frame.SetBackgroundColour(wx.WHITE)
 
         displaySize = wx.DisplaySize()
@@ -121,29 +153,30 @@ class PDAL_plugin(pcbnew.ActionPlugin):
         wx.StaticBitmap(self.frame, -1, bitmap, (50, 20))
 
         # Create text
-        self.text1 = wx.StaticText(self.frame, label = 'PCB Design Action Labeler   Copyright \u00A9 fleaxiao', pos = (130,180))
+        self.text1 = wx.StaticText(self.frame, label = 'PCB Design Action Labeler   Copyright \u00A9 fleaxiao', pos = (130,210))
         self.text1.SetFont(wx.Font(6, wx.DECORATIVE, wx.NORMAL, wx.BOLD))
         self.text1.SetForegroundColour(wx.LIGHT_GREY)
 
-        self.text2 = wx.StaticText(self.frame, label = 'PDAL is ready', pos = (40,155), size = (120,10), style=wx.ALIGN_CENTER)
+        self.text2 = wx.StaticText(self.frame, label = 'PDAL is ready', pos = (40,185), size = (120,10), style=wx.ALIGN_CENTER)
         self.text2.SetFont(wx.Font(7, wx.DECORATIVE, wx.NORMAL, wx.BOLD))
         self.text2.SetForegroundColour(wx.RED)
         self.text2.SetWindowStyle(wx.ALIGN_CENTER)
 
-        self.text3 = wx.TextCtrl(self.frame, pos = (180,50), size = (165,25), style = wx.TE_READONLY)
+        self.text3 = wx.TextCtrl(self.frame, pos = (180,52), size = (179,25), style = wx.TE_READONLY)
 
-        self.text4 = wx.TextCtrl(self.frame, value="ID", pos = (180,110), size = (30,25), style = wx.TE_CENTRE)
+        self.text4 = wx.TextCtrl(self.frame, value="ID", pos = (180,144), size = (50,25), style = wx.TE_CENTRE)
 
-        self.text5 = wx.TextCtrl(self.frame, value="Instructions", pos = (212,110), size = (135,25))
+        self.text5 = wx.TextCtrl(self.frame, value="Sub-ID", pos = (232,144), size = (127,25), style = wx.TE_CENTRE)
 
-        self.text6 = wx.TextCtrl(self.frame, value="0", pos = (180,140), size = (30,25), style = wx.TE_READONLY)
+        self.text6 = wx.TextCtrl(self.frame, value="0", pos = (180,172), size = (30,25), style = wx.TE_READONLY)
         self.text6.SetWindowStyle(wx.ALIGN_CENTER)
 
         # Create slider
-        self.slider = wx.Slider(self.frame, value=20, minValue=10, maxValue=50, pos=(229,80), size=(100,25), style=wx.SL_HORIZONTAL) #? MaxValue should be the length of the record file
-        self.min_value_text = wx.StaticText(self.frame, label=str(self.slider.GetMin()), pos=(215, 90))
+        self.slider = wx.Slider(self.frame, value=20, minValue=3, maxValue=50, pos=(229,80), size=(200,25), style=wx.SL_HORIZONTAL) #? MaxValue should be the length of the record file
+        self.min_value_text = wx.StaticText(self.frame, label=str(self.slider.GetMin()), pos=(220, 90))
         self.min_value_text.SetFont(wx.Font(7, wx.DECORATIVE, wx.NORMAL, wx.BOLD))
-        self.max_value_text = wx.StaticText(self.frame, label=str(self.slider.GetMax()), pos=(330, 90))
+        self.min_value_text.SetWindowStyle(wx.ALIGN_CENTER)
+        self.max_value_text = wx.StaticText(self.frame, label=str(self.slider.GetMax()), pos=(430, 90))
         self.max_value_text.SetFont(wx.Font(7, wx.DECORATIVE, wx.NORMAL, wx.BOLD))
         self.slider_value = wx.TextCtrl(self.frame, value = str(self.slider.GetValue()), pos=(180,80), size=(30,25), style=wx.TE_READONLY)
         self.slider.Bind(wx.EVT_SLIDER, self.on_slider_change)
@@ -153,27 +186,36 @@ class PDAL_plugin(pcbnew.ActionPlugin):
         self.button1 = wx.Button(self.frame, label = 'Initialization', pos = (180,15), size=(272, 25))
         self.button1.Bind(wx.EVT_BUTTON, self.initialization)
 
-        self.button2 = wx.Button(self.frame, label = 'Load', pos = (350,50), size=(102, 25))
+        self.button2 = wx.Button(self.frame, label = 'Load', pos = (361,52), size = (89, 25))
         self.button2.Bind(wx.EVT_BUTTON, self.load_action)
 
-        self.button3 = wx.Button(self.frame, label = 'Play', pos = (350,80), size=(50, 25))
+        self.checkbox1 = wx.CheckBox(self.frame, label="Fix start", pos = (50, 131), size = (130, 18))
+        self.checkbox1.SetFont(wx.Font(8, wx.DECORATIVE, wx.NORMAL, wx.NORMAL))
+
+        self.checkbox2 = wx.CheckBox(self.frame, label="Slow play", pos = (50, 152), size = (130, 18))
+        self.checkbox2.SetFont(wx.Font(8, wx.DECORATIVE, wx.NORMAL, wx.NORMAL))
+
+        self.button3 = wx.Button(self.frame, label = 'Play', pos = (180,108), size=(89, 25))
         self.button3.Bind(wx.EVT_BUTTON, self.play_action)
+        
+        self.button4 = wx.Button(self.frame, label = 'Next', pos = (271,108), size=(89, 25))
+        self.button4.Bind(wx.EVT_BUTTON, self.next_action)
 
-        self.button4 = wx.Button(self.frame, label = 'Replay', pos = (402,80), size=(50, 25))
-        self.button4.Bind(wx.EVT_BUTTON, self.replay_action)
+        self.button5 = wx.Button(self.frame, label = 'Replay', pos = (361,108), size=(89, 25))
+        self.button5.Bind(wx.EVT_BUTTON, self.replay_action)
 
-        self.button5 = wx.Button(self.frame, label = 'Label', pos = (350,110), size=(102, 25))
-        self.button5.Bind(wx.EVT_BUTTON, self.label_action)
+        self.button6 = wx.Button(self.frame, label = 'Label', pos = (361,144), size=(89, 25))
+        self.button6.Bind(wx.EVT_BUTTON, self.label_action)
 
-        self.button6 = wx.Button(self.frame, label = 'Save label file', pos = (212,140), size=(240, 25))
-        self.button6.Bind(wx.EVT_BUTTON, self.save_action)
+        self.button7 = wx.Button(self.frame, label = 'Save label file', pos = (212,172), size=(240, 25))
+        self.button7.Bind(wx.EVT_BUTTON, self.save_action)
 
         # Create line
-        self.line1 = wx.StaticLine(self.frame, pos=(195, 45), size=(240,1), style=wx.LI_HORIZONTAL)
-        self.line2 = wx.StaticLine(self.frame, pos=(40, 172), size=(120,1), style=wx.LI_HORIZONTAL)
-        self.line3 = wx.StaticLine(self.frame, pos=(195, 172), size=(240,1), style=wx.LI_HORIZONTAL)
+        self.line1 = wx.StaticLine(self.frame, pos=(40, 202), size=(120,1), style=wx.LI_HORIZONTAL)
+        self.line2 = wx.StaticLine(self.frame, pos=(195, 45), size=(240,1), style=wx.LI_HORIZONTAL)
+        self.line3 = wx.StaticLine(self.frame, pos=(195, 138), size=(240,1), style=wx.LI_HORIZONTAL)
+        self.line4 = wx.StaticLine(self.frame, pos=(195, 202), size=(240,1), style=wx.LI_HORIZONTAL)
 
         self.frame.Show()
 
         return
-
