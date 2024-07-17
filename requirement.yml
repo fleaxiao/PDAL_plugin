@@ -1,0 +1,7 @@
+Name: PDAL
+dependencies:
+  - python=3.8
+  - pip:
+    - pandas
+    - pyautogui
+    - pygetwindow
