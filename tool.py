@@ -184,6 +184,34 @@ def highlight_track(board, start_pos, end_pos, layer):
             track.SetSelected()
     pcbnew.Refresh()
 
+def delect_track(board, net, start_x, start_y, end_x, end_y, width, layer):
+    start_pos = pcbnew.VECTOR2I(pcbnew.wxPointMM(start_x, start_y))
+    end_pos = pcbnew.VECTOR2I(pcbnew.wxPointMM(end_x, end_y))
+    track_width = pcbnew.FromMM(width)
+    if layer == 'F.Cu':
+        track_layer = pcbnew.F_Cu
+    elif layer == 'B.Cu':
+        track_layer = pcbnew.B_Cu
+    for track in board.GetTracks():
+        if (track.GetStart() == start_pos and 
+            track.GetEnd() == end_pos and 
+            track.GetLayer() == track_layer and
+            track.GetWidth() == track_width):
+            board.Delete(track)
+
+# def delect_track(board, start_pos, end_pos, layer, width):
+#     if layer == 'F.Cu':
+#         track_layer = pcbnew.F_Cu
+#     elif layer == 'B.Cu':
+#         track_layer = pcbnew.B_Cu
+#     for track in board.GetTracks():
+#         if (track.GetStart() == start_pos and 
+#             track.GetEnd() == end_pos and 
+#             track.GetLayer() == track_layer and
+#             track.GetWidth() == width):
+#             board.Delete(track)
+#     pcbnew.Refresh()
+
 def find_via(trake_o, via_o):
     for i in range(len(trake_o[0])):
         for j in range(len(via_o[0])):
