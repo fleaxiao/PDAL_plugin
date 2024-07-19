@@ -7,7 +7,8 @@ PDAL and PCB Design Action Recorder (PDAR, https://github.com/fleaxiao/PDAR_plug
  **Note:** This plugin has only been tested with KiCad 7.0. It's likely incompatible with later versions.
 
 ## Setup
-Launch KiCad and navigate to the folder where plugins are stored.
+
+Please meet the requirement of package in requirement.yml. Launch KiCad and navigate to the folder where plugins are stored.
 - Go to: `Kicad -> Tools -> External Plugins -> Open plugin Directory`
 
 Open a terminal and change directory to the plugin folder:

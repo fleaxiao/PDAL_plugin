@@ -251,3 +251,11 @@ def find_connection(wire, number_track, trake_start_o, trake_end_o, lebal):
             else:
                 continue
     return wire, max_lebal
+
+def is_column_in_array(checked_matrix, checking_matrix, j):
+    column_to_check = checked_matrix[:, j]
+
+    for i in range(checking_matrix.shape[1]):
+        if np.array_equal(column_to_check, checking_matrix[:, i]):
+            return True
+    return False

@@ -52,15 +52,20 @@ class PDAL_plugin(pcbnew.ActionPlugin):
             self.text2.SetLabel('Please load record file.')
             return
         self.step = int(self.slider.GetValue())
-        if self.step >= len(RECORD_DESIGN['Record']['Track']['Net']):
-            self.step = len(RECORD_DESIGN['Record']['Track']['Net'])
+        if self.step >= len(RECORD_DESIGN['Record']['Module']['C1']['Position X']):
+            self.step = len(RECORD_DESIGN['Record']['Module']['C1']['Position X'])
         if self.checkbox1.IsChecked():
-            self.start = random.randrange(0, 10)
+            # self.start = random.randrange(0, 10)
+            self.start = 0
         else:
-            self.start = random.randrange(0, len(RECORD_DESIGN['Record']['Track']['Net']) - self.step + 1)
-        SLICE = {'Record':{}, 'Footprint':{}}
+            self.start = random.randrange(0, len(RECORD_DESIGN['Record']['Module']['C1']['Position X']) - self.step + 1)
+        SLICE = {'Record':{}, 'Footprint':{}, 'Constraint':{}}
         SLICE['Record'] = random_tailor(RECORD_DESIGN['Record'], self.start, self.step)
         SLICE['Footprint'] = RECORD_DESIGN['Footprint']
+        SLICE['Constraint'] = {
+            "Power Module": sorted(RECORD_DESIGN['Constraint']["Power Module"]),
+            "Sensitive Module": sorted(RECORD_DESIGN['Constraint']["Sensitive Module"])
+        }
 
         if self.checkbox2.IsChecked():
             self.speed = 1
@@ -69,19 +74,19 @@ class PDAL_plugin(pcbnew.ActionPlugin):
         self.text2.SetLabel('Playing...')
         record_play(SLICE['Record'], self.step, self.speed)
 
-        self.text2.SetLabel('Play is end.')
+        self.text2.SetLabel(f'Play is end. {self.step} steps')
 
     def next_action(self, event):
         global RECORD_DESIGN, SLICE
 
-        if self.step >= len(RECORD_DESIGN['Record']['Track']['Net']) - self.start:
+        if self.step >= len(RECORD_DESIGN['Record']['Module']['C1']['Position X']) - self.start:
             self.text2.SetLabel('No more steps!')
         else:
             self.step = self.step + 1
             SLICE['Record'] = random_tailor(RECORD_DESIGN['Record'], self.start, self.step)
             step_play(SLICE['Record'])
 
-            self.text2.SetLabel('Next step is shown.')
+            self.text2.SetLabel(f'Next step is shown. {self.step} steps')
     
     def back_action(self, event):
         global RECORD_DESIGN, SLICE
@@ -93,7 +98,7 @@ class PDAL_plugin(pcbnew.ActionPlugin):
             SLICE['Record'] = random_tailor(RECORD_DESIGN['Record'], self.start, self.step)
             step_play(SLICE['Record'])
 
-            self.text2.SetLabel('Last step is shown.')
+            self.text2.SetLabel(f'Last step is shown. {self.step} steps')
 
     def replay_action(self, event):
         global RECORD_DESIGN, SLICE
@@ -184,7 +189,7 @@ class PDAL_plugin(pcbnew.ActionPlugin):
         self.text6.SetWindowStyle(wx.ALIGN_CENTER)
 
         # Create slider
-        self.slider = wx.Slider(self.frame, value=10, minValue=5, maxValue=50, pos=(229,80), size=(200,25), style=wx.SL_HORIZONTAL) #? MaxValue should be the length of the record file
+        self.slider = wx.Slider(self.frame, value=50, minValue=1, maxValue=50, pos=(229,80), size=(200,25), style=wx.SL_HORIZONTAL) #? MaxValue should be the length of the record file
         self.min_value_text = wx.StaticText(self.frame, label=str(self.slider.GetMin()), pos=(220, 90))
         self.min_value_text.SetFont(wx.Font(7, wx.DECORATIVE, wx.NORMAL, wx.BOLD))
         self.min_value_text.SetWindowStyle(wx.ALIGN_CENTER)
