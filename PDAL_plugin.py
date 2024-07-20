@@ -52,15 +52,20 @@ class PDAL_plugin(pcbnew.ActionPlugin):
             self.text2.SetLabel('Please load record file.')
             return
         self.step = int(self.slider.GetValue())
-        if self.step >= len(RECORD_DESIGN['Record']['Track']['Net']):
-            self.step = len(RECORD_DESIGN['Record']['Track']['Net'])
+        if self.step >= len(RECORD_DESIGN['Record']['Module']['C1']['Position X']):
+            self.step = len(RECORD_DESIGN['Record']['Module']['C1']['Position X'])
         if self.checkbox1.IsChecked():
-            self.start = random.randrange(0, 10)
+            # self.start = random.randrange(0, 10)
+            self.start = 0
         else:
-            self.start = random.randrange(0, len(RECORD_DESIGN['Record']['Track']['Net']) - self.step + 1)
-        SLICE = {'Record':{}, 'Footprint':{}}
+            self.start = random.randrange(0, len(RECORD_DESIGN['Record']['Module']['C1']['Position X']) - self.step + 1)
+        SLICE = {'Record':{}, 'Footprint':{}, 'Constraint':{}}
         SLICE['Record'] = random_tailor(RECORD_DESIGN['Record'], self.start, self.step)
         SLICE['Footprint'] = RECORD_DESIGN['Footprint']
+        SLICE['Constraint'] = {
+            "Power Module": sorted(RECORD_DESIGN['Constraint']["Power Module"]),
+            "Sensitive Module": sorted(RECORD_DESIGN['Constraint']["Sensitive Module"])
+        }
 
         if self.checkbox2.IsChecked():
             self.speed = 1
@@ -69,19 +74,31 @@ class PDAL_plugin(pcbnew.ActionPlugin):
         self.text2.SetLabel('Playing...')
         record_play(SLICE['Record'], self.step, self.speed)
 
-        self.text2.SetLabel('Play is end.')
+        self.text2.SetLabel(f'Play is end. {self.step} steps')
 
     def next_action(self, event):
         global RECORD_DESIGN, SLICE
 
-        if self.step >= len(RECORD_DESIGN['Record']['Track']['Net']) - self.start:
+        if self.step >= len(RECORD_DESIGN['Record']['Module']['C1']['Position X']) - self.start:
             self.text2.SetLabel('No more steps!')
         else:
             self.step = self.step + 1
             SLICE['Record'] = random_tailor(RECORD_DESIGN['Record'], self.start, self.step)
             step_play(SLICE['Record'])
 
-            self.text2.SetLabel('Next step is shown.')
+            self.text2.SetLabel(f'Next step is shown. {self.step} steps')
+    
+    def back_action(self, event):
+        global RECORD_DESIGN, SLICE
+
+        if self.step == 2:
+            self.text2.SetLabel('No more steps!')
+        else:
+            self.step = self.step - 1
+            SLICE['Record'] = random_tailor(RECORD_DESIGN['Record'], self.start, self.step)
+            step_play(SLICE['Record'])
+
+            self.text2.SetLabel(f'Last step is shown. {self.step} steps')
 
     def replay_action(self, event):
         global RECORD_DESIGN, SLICE
@@ -162,17 +179,17 @@ class PDAL_plugin(pcbnew.ActionPlugin):
         self.text2.SetForegroundColour(wx.RED)
         self.text2.SetWindowStyle(wx.ALIGN_CENTER)
 
-        self.text3 = wx.TextCtrl(self.frame, pos = (180,52), size = (179,25), style = wx.TE_READONLY)
+        self.text3 = wx.TextCtrl(self.frame, pos = (180,52), size = (202,25), style = wx.TE_READONLY)
 
-        self.text4 = wx.TextCtrl(self.frame, value="ID", pos = (180,144), size = (50,25), style = wx.TE_CENTRE)
+        self.text4 = wx.TextCtrl(self.frame, value="ID", pos = (180,144), size = (100,25), style = wx.TE_CENTRE)
 
-        self.text5 = wx.TextCtrl(self.frame, value="Sub-ID", pos = (232,144), size = (127,25), style = wx.TE_CENTRE)
+        self.text5 = wx.TextCtrl(self.frame, value="Sub-ID", pos = (282,144), size = (100,25), style = wx.TE_CENTRE)
 
         self.text6 = wx.TextCtrl(self.frame, value="0", pos = (180,172), size = (30,25), style = wx.TE_READONLY)
         self.text6.SetWindowStyle(wx.ALIGN_CENTER)
 
         # Create slider
-        self.slider = wx.Slider(self.frame, value=20, minValue=3, maxValue=50, pos=(229,80), size=(200,25), style=wx.SL_HORIZONTAL) #? MaxValue should be the length of the record file
+        self.slider = wx.Slider(self.frame, value=50, minValue=1, maxValue=50, pos=(229,80), size=(200,25), style=wx.SL_HORIZONTAL) #? MaxValue should be the length of the record file
         self.min_value_text = wx.StaticText(self.frame, label=str(self.slider.GetMin()), pos=(220, 90))
         self.min_value_text.SetFont(wx.Font(7, wx.DECORATIVE, wx.NORMAL, wx.BOLD))
         self.min_value_text.SetWindowStyle(wx.ALIGN_CENTER)
@@ -186,7 +203,7 @@ class PDAL_plugin(pcbnew.ActionPlugin):
         self.button1 = wx.Button(self.frame, label = 'Initialization', pos = (180,15), size=(272, 25))
         self.button1.Bind(wx.EVT_BUTTON, self.initialization)
 
-        self.button2 = wx.Button(self.frame, label = 'Load', pos = (361,52), size = (89, 25))
+        self.button2 = wx.Button(self.frame, label = 'Load', pos = (384,52), size = (66, 25))
         self.button2.Bind(wx.EVT_BUTTON, self.load_action)
 
         self.checkbox1 = wx.CheckBox(self.frame, label="Fix start", pos = (50, 131), size = (130, 18))
@@ -195,20 +212,23 @@ class PDAL_plugin(pcbnew.ActionPlugin):
         self.checkbox2 = wx.CheckBox(self.frame, label="Slow play", pos = (50, 152), size = (130, 18))
         self.checkbox2.SetFont(wx.Font(8, wx.DECORATIVE, wx.NORMAL, wx.NORMAL))
 
-        self.button3 = wx.Button(self.frame, label = 'Play', pos = (180,108), size=(89, 25))
+        self.button3 = wx.Button(self.frame, label = 'Play', pos = (180,108), size=(66, 25))
         self.button3.Bind(wx.EVT_BUTTON, self.play_action)
         
-        self.button4 = wx.Button(self.frame, label = 'Next', pos = (271,108), size=(89, 25))
+        self.button4 = wx.Button(self.frame, label = 'Next', pos = (248,108), size=(66, 25))
         self.button4.Bind(wx.EVT_BUTTON, self.next_action)
 
-        self.button5 = wx.Button(self.frame, label = 'Replay', pos = (361,108), size=(89, 25))
-        self.button5.Bind(wx.EVT_BUTTON, self.replay_action)
+        self.button5 = wx.Button(self.frame, label = 'Back', pos = (316,108), size=(66, 25))
+        self.button5.Bind(wx.EVT_BUTTON, self.back_action)
 
-        self.button6 = wx.Button(self.frame, label = 'Label', pos = (361,144), size=(89, 25))
-        self.button6.Bind(wx.EVT_BUTTON, self.label_action)
+        self.button6 = wx.Button(self.frame, label = 'Replay', pos = (384,108), size=(66, 25))
+        self.button6.Bind(wx.EVT_BUTTON, self.replay_action)
 
-        self.button7 = wx.Button(self.frame, label = 'Save label file', pos = (212,172), size=(240, 25))
-        self.button7.Bind(wx.EVT_BUTTON, self.save_action)
+        self.button7 = wx.Button(self.frame, label = 'Label', pos = (384,144), size=(66, 25))
+        self.button7.Bind(wx.EVT_BUTTON, self.label_action)
+
+        self.button8 = wx.Button(self.frame, label = 'Save label file', pos = (212,172), size=(240, 25))
+        self.button8.Bind(wx.EVT_BUTTON, self.save_action)
 
         # Create line
         self.line1 = wx.StaticLine(self.frame, pos=(40, 202), size=(120,1), style=wx.LI_HORIZONTAL)
