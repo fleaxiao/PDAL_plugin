@@ -91,7 +91,7 @@ def record_play(SLICE, step, speed):
                     #     module_o = np.array([value['Position X'][i-1], value['Position Y'][i-1], value['Angle'][i-1]])
                     #     module_p = np.array([value['Position X'][i], value['Position Y'][i], value['Angle'][i]])
                     #     if not np.array_equal(module_o, module_p):
-                    #         highlight_component = board.FindrefByFootprints(module_ref)
+                    #         highlight_component = board.FindFootprintByReference(module_ref)
                     #         highlight_component.SetSelected()
 
             elif key == 'Track':
@@ -151,7 +151,7 @@ def step_play(SLICE):
                 module_o = np.array([value['Position X'][-2], value['Position Y'][-2], value['Angle'][-2]])
                 module_p = np.array([value['Position X'][-1], value['Position Y'][-1], value['Angle'][-1]])
                 if not np.array_equal(module_o, module_p):
-                    highlight_component = board.FindrefByFootprints(module_ref)
+                    highlight_component = board.FindFootprintByReference(module_ref)
                     highlight_component.SetSelected()
 
         elif key == 'Track':
@@ -211,8 +211,22 @@ def step_play(SLICE):
 def label_slice(LABEL_DESIGN, SLICE, step, ID, INSTRUCTION):
     if LABEL_DESIGN == {}:
         LABEL_DESIGN = {'Footprint':{}, 'Constraint':{},'ID':[], 'Instruction':[], 'State':{'Module':[],'Track':[],'Via':[]}, 'Action':[]}
-    LABEL_DESIGN['Footprint'] = SLICE['Footprint']
-    LABEL_DESIGN['Constraint'] = SLICE['Constraint']
+
+    module_ref_list = []
+    footprint_data_array = []
+    for module_ref in SLICE['Footprint']:
+        module_ref_list.append(module_ref)
+        footprint_data_array.append([SLICE['Footprint'][module_ref]['Width'], SLICE['Footprint'][module_ref]['Height']])
+    constraint_data_array = []
+    for key in SLICE['Constraint']:
+        constraint_data_array.append(SLICE['Constraint'][key])
+    for i in range(len(constraint_data_array)):
+        for j in range(len(constraint_data_array[i])):
+            constraint_data_array[i][j] = module_ref_list.index(constraint_data_array[i][j])
+        constraint_data_array[i].sort()
+    LABEL_DESIGN['Footprint'] = footprint_data_array
+    LABEL_DESIGN['Constraint'] = constraint_data_array
+
     LABEL_DESIGN['ID'].append(ID)
     LABEL_DESIGN['Instruction'].append(INSTRUCTION)
     
