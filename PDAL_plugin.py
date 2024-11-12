@@ -119,9 +119,9 @@ class PDAL_plugin(pcbnew.ActionPlugin):
     def label_action(self, event):
         global SLICE, LABEL_DESIGN
 
-        ID = int(self.text4.GetValue())
-        INSTRUCTION = int(self.text5.GetValue())
-        LABEL_DESIGN = label_slice(LABEL_DESIGN, SLICE, self.step, ID, INSTRUCTION)
+        ID = self.text4.GetValue()
+        INSTRUCTION = self.text5.GetValue()
+        LABEL_DESIGN = label_slice(LABEL_DESIGN, SLICE, ID, INSTRUCTION)
 
         self.number_label = int(self.text6.GetValue())
         self.number_label += 1
@@ -130,9 +130,21 @@ class PDAL_plugin(pcbnew.ActionPlugin):
     
     def save_action(self, event):
         global LABEL_DESIGN
-
-        label_data = json.dumps(LABEL_DESIGN, indent=4)
+        
         exist_filenname = os.path.basename(self.filepath)
+        base_filename = os.path.splitext(exist_filenname)[0]
+
+        # image file
+        if not os.path.exists(os.path.join(base_filename,'Condition')):
+            os.makedirs(os.path.join(base_filename,'Condition'))
+        if not os.path.exists(os.path.join(base_filename,'Target')):
+            os.makedirs(os.path.join(base_filename,'Target'))
+
+        save_image(LABEL_DESIGN, exist_filenname)
+
+        # json file
+        label_data = json.dumps(LABEL_DESIGN, indent=4)
+        
         filename = exist_filenname.replace("record", "label")
         with open(filename, 'w') as file:
             file.write(label_data)

@@ -259,3 +259,8 @@ def is_column_in_array(checked_matrix, checking_matrix, j):
         if np.array_equal(column_to_check, checking_matrix[:, i]):
             return True
     return False
+
+def get_one_hot(feature, idx):
+    one_hot = np.zeros(len(idx))
+    one_hot[idx.get(feature)] = 1
+    return one_hot
