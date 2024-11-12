@@ -1,4 +1,8 @@
 .*
 **/__pycache__
 
+<<<<<<< HEAD
 **.ipynb
+=======
+test.ipynb
+>>>>>>> 70f71bbe574b2a6ae5c56e73a57a322dd91e80b4
