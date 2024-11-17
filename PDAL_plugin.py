@@ -7,8 +7,11 @@ import random
 import time
 import threading
 import json
+
 from .function import *
 from .tool import *
+from .constant import *
+
 
 class PDAL_plugin(pcbnew.ActionPlugin):
     def defaults(self):
@@ -133,21 +136,20 @@ class PDAL_plugin(pcbnew.ActionPlugin):
         
         exist_filenname = os.path.basename(self.filepath)
         base_filename = os.path.splitext(exist_filenname)[0]
-
-        # image file
-        if not os.path.exists(os.path.join(base_filename,'Condition')):
-            os.makedirs(os.path.join(base_filename,'Condition'))
-        if not os.path.exists(os.path.join(base_filename,'Target')):
-            os.makedirs(os.path.join(base_filename,'Target'))
-
-        save_image(LABEL_DESIGN, exist_filenname)
+        circuit_name = base_filename.split('_')[0]
 
         # json file
         label_data = json.dumps(LABEL_DESIGN, indent=4)
-        
         filename = exist_filenname.replace("record", "label")
         with open(filename, 'w') as file:
             file.write(label_data)
+
+        # image file
+        if not os.path.exists(os.path.join(circuit_name,'Condition')):
+            os.makedirs(os.path.join(circuit_name,'Condition'))
+        if not os.path.exists(os.path.join(circuit_name,'Target')):
+            os.makedirs(os.path.join(circuit_name,'Target'))
+        save_image(LABEL_DESIGN, exist_filenname)
 
         LABEL_DESIGN = {}
         self.number_label = 0
@@ -193,9 +195,9 @@ class PDAL_plugin(pcbnew.ActionPlugin):
 
         self.text3 = wx.TextCtrl(self.frame, pos = (180,52), size = (202,25), style = wx.TE_READONLY)
 
-        self.text4 = wx.TextCtrl(self.frame, value="ID", pos = (180,144), size = (100,25), style = wx.TE_CENTRE)
+        self.text4 = wx.TextCtrl(self.frame, value="ID", pos = (180,144), size = (66,25), style = wx.TE_CENTRE)
 
-        self.text5 = wx.TextCtrl(self.frame, value="Sub-ID", pos = (282,144), size = (100,25), style = wx.TE_CENTRE)
+        self.text5 = wx.TextCtrl(self.frame, value="Instruction", pos = (248,144), size = (134,25), style = wx.TE_CENTRE)
 
         self.text6 = wx.TextCtrl(self.frame, value="0", pos = (180,172), size = (30,25), style = wx.TE_READONLY)
         self.text6.SetWindowStyle(wx.ALIGN_CENTER)

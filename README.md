@@ -2,9 +2,9 @@
 
 PCB Design Action Labeler (PDAL) is a plugin specifically designed for KiCad that allows user to label their PCB design action to specific task number and language instructions.
 
-PDAL and PCB Design Action Recorder ([PDAR](https://github.com/fleaxiao/PDAR_plugin.git)) are series plugins. These plugins are recommend to use together, which fully log the human's thinking during PCB design process. Please make sure the constant.py files in each plugin are identical.
+PDAL and PCB Design Action Recorder ([PDAR](https://github.com/fleaxiao/PDAR_plugin.git)) are series plugins. These plugins are recommend to use together, which fully log the human's thinking during PCB design process. Please make sure the `constant.py` files in each plugin are identical.
 
- **Note:** This plugin has only been tested with KiCad 7.0. It's likely incompatible with later versions.
+ > **Note:** This plugin has only been tested with KiCad 7.0. It's likely incompatible with later versions.
 
 ## Setup
 
@@ -36,7 +36,12 @@ The PDAL plugin should now be visible in the menu of KiCad.
 
 4. `Play:` The recorded PCB design action will be played. The number of action step is controlled by the bar.
 
-5. `Label:` After typing the specific task number and language instructions, a new labeled `.json` file will be exported.
+5. `Label:` After typing the specific task number and language instructions, a new label and iamge files will be exported.
+<img src="assets/Image_formate.png">
+
+## Acknowledge
+
+The logo of this plugin is designed by Freepik from Flaticon.
 
 ## Contact
 

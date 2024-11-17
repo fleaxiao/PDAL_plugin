@@ -216,10 +216,8 @@ def label_slice(LABEL_DESIGN, SLICE, ID, INSTRUCTION):
         LABEL_DESIGN = {'Footprint':{}, 'Constraint':{},'ID':[], 'Instruction':[], 'State':{'Module':[],'Track':[],'Via':[]}, 'Action':[]}
 
     module_ref_list = []
-    footprint_data_array = []
     for module_ref in SLICE['Footprint']:
         module_ref_list.append(module_ref)
-        footprint_data_array.append([SLICE['Footprint'][module_ref]['Width'], SLICE['Footprint'][module_ref]['Height']])
     constraint_data_array = []
     for key in SLICE['Constraint']:
         constraint_data_array.append(SLICE['Constraint'][key])
@@ -227,9 +225,9 @@ def label_slice(LABEL_DESIGN, SLICE, ID, INSTRUCTION):
         for j in range(len(constraint_data_array[i])):
             constraint_data_array[i][j] = module_ref_list.index(constraint_data_array[i][j])
         constraint_data_array[i].sort()
-    LABEL_DESIGN['Footprint'] = footprint_data_array
     LABEL_DESIGN['Constraint'] = constraint_data_array
 
+    LABEL_DESIGN['Footprint'] = SLICE['Footprint']
     LABEL_DESIGN['ID'].append(ID)
     LABEL_DESIGN['Instruction'].append(INSTRUCTION)
 
@@ -391,6 +389,7 @@ def save_image(LABEL_DESIGN, file_path):
 
             # save image
             base_filename = os.path.splitext(file_path)[0]
+            circuit_name = base_filename.split('_')[0]
             if not idx == len(LABEL_DESIGN['State']['Module'][i]) - 1:
                 if label_id == "ID":
                     image_name = f'{idx+1}.png'
@@ -399,7 +398,7 @@ def save_image(LABEL_DESIGN, file_path):
                 filename = file_path.replace("record.json", image_name)
                 image_array = (array * 255).astype(np.uint8)
                 img = Image.fromarray(image_array)
-                img.save(os.path.join(base_filename,'Condition', filename))
+                img.save(os.path.join(circuit_name,'Condition', filename))
 
             else:
                 for m in range(idx):
@@ -410,6 +409,6 @@ def save_image(LABEL_DESIGN, file_path):
                     filename = file_path.replace("record.json", image_name)
                     image_array = (array * 255).astype(np.uint8)
                     img = Image.fromarray(image_array)
-                    img.save(os.path.join(base_filename, 'Target', filename))
+                    img.save(os.path.join(circuit_name, 'Target', filename))
             
             
