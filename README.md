@@ -8,21 +8,22 @@ PDAL and PCB Design Action Recorder ([PDAR](https://github.com/fleaxiao/PDAR_plu
 
 ## Setup
 
-Please meet the requirement of package in requirement.yml. Launch KiCad and navigate to the folder where plugins are stored.
-- Go to: `Kicad -> Tools -> External Plugins -> Open plugin Directory`
+1. Launch `KiCad Command Prompt` and install the requirement of package in requirement.yml. 
 
-Open a terminal and change directory to the plugin folder:
-```bash
-cd [path-to-plugins-folder]
-```
+2. Launch `KiCad` and download plugin.
+    - Navigate to the folder where plugins are stored: `KiCad -> Tools -> External Plugins -> Open plugin Directory`
 
-Clone the PDAL_plugin repository:
-```bash
-git clone https://github.com/fleaxiao/PDAL_plugin.git
-```
+    - Open a terminal and change directory to the plugin folder:
+        ```bash
+        cd [path-to-plugins-folder]
+        ```
 
-Refresh your plugins in KiCad:
-- Go to: `Kicad -> Tools -> External Plugins -> Refresh Plugins`
+    - Clone the PDAL_plugin repository:
+        ```bash
+        git clone https://github.com/fleaxiao/PDAL_plugin.git
+        ```
+
+    - Refresh your plugins in KiCad: `KiCad -> Tools -> External Plugins -> Refresh Plugins`
 
 The PDAL plugin should now be visible in the menu of KiCad.
 
@@ -30,13 +31,13 @@ The PDAL plugin should now be visible in the menu of KiCad.
 
 1. Open both schematic file and PCB layout file. Make sure the PCB layout is empty.
 
-2. `Initilization:` The components from the schematic will be imported to the PCB layout design environment. 
+2. `Initialization:` The components from the schematic will be imported to the PCB layout design environment. 
 
 3. `Load:` The `.json` record file should be selected. 
 
 4. `Play:` The recorded PCB design action will be played. The number of action step is controlled by the bar.
 
-5. `Label:` After typing the specific task number and language instructions, a new label and iamge files will be exported.
+5. `Label:` After typing the specific task number and language instructions, a new label and image files will be exported.
 <img src="assets/Image_formate.png">
 
 ## Acknowledge
