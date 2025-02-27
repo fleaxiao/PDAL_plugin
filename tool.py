@@ -150,14 +150,17 @@ def place_component(board, module, x1, y1, x2, y2):
 
 def place_module(board, module_ref, module_x, module_y, module_angle):
     module = board.FindFootprintByReference(module_ref)
-    module.SetPosition(pcbnew.VECTOR2I(pcbnew.wxPointMM(module_x, module_y)))
+    # module.SetPosition(pcbnew.VECTOR2I(pcbnew.wxPointMM(module_x, module_y)))
+    module.SetPosition(pcbnew.VECTOR2I(pcbnew.FromMM(module_x), pcbnew.FromMM(module_y)))
     module.SetOrientationDegrees(module_angle)
 
 def place_track(board, net, start_x, start_y, end_x, end_y, width, layer):
     track = pcbnew.PCB_TRACK(board)
     track.SetNet(board.FindNet(net))
-    track.SetStart(pcbnew.VECTOR2I(pcbnew.wxPointMM(start_x, start_y)))
-    track.SetEnd(pcbnew.VECTOR2I(pcbnew.wxPointMM(end_x, end_y)))
+    # track.SetStart(pcbnew.VECTOR2I(pcbnew.wxPointMM(start_x, start_y)))
+    # track.SetEnd(pcbnew.VECTOR2I(pcbnew.wxPointMM(end_x, end_y)))
+    track.SetStart(pcbnew.VECTOR2I(pcbnew.FromMM(start_x), pcbnew.FromMM(start_y)))
+    track.SetEnd(pcbnew.VECTOR2I(pcbnew.FromMM(end_x), pcbnew.FromMM(end_y)))
     track.SetWidth(pcbnew.FromMM(width))
     if layer == 'F.Cu':
         track.SetLayer(pcbnew.F_Cu)
