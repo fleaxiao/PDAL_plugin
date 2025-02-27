@@ -105,7 +105,8 @@ def create_component(board, fp_path, fp_lib, fp, ref, value, x1, y1, x2, y2):
     if FLAG == True:
         wx.MessageBox(f'No space available for {ref}', 'Error')
     else:
-        module.SetPosition(pcbnew.VECTOR2I(pcbnew.wxPointMM(x, y)))
+        # module.SetPosition(pcbnew.VECTOR2I(pcbnew.wxPointMM(x, y)))
+        module.SetPosition(pcbnew.VECTOR2I(int(pcbnew.FromMM(x)), int(pcbnew.FromMM(y))))
         board.Add(module)
         module.SetReference(ref) # when mutiple components are placed with same reference, there is a bug of the overlap detction
         module.SetValue(value) # when the value is set to empty, there is a bug of the overlap detction
@@ -146,7 +147,8 @@ def place_component(board, module, x1, y1, x2, y2):
     if FLAG == True:
         wx.MessageBox(f'No space available for components', 'Error')
     else:
-        module.SetPosition(pcbnew.VECTOR2I(pcbnew.wxPointMM(x, y)))
+        # module.SetPosition(pcbnew.VECTOR2I(pcbnew.wxPointMM(x, y)))
+        module.SetPosition(pcbnew.VECTOR2I(int(pcbnew.FromMM(x)), int(pcbnew.FromMM(y))))
 
 def place_module(board, module_ref, module_x, module_y, module_angle):
     module = board.FindFootprintByReference(module_ref)
